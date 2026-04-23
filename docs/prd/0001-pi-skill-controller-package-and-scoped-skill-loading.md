@@ -1,6 +1,6 @@
 # PRD-0001: Pi Skill Controller Package and Scoped Skill Loading
 
-- **Status:** Active
+- **Status:** Completed
 - **Date:** 2026-04-22
 - **Author:** Magi Metal
 - **Related:** `README.md`, `/Users/magimetal/.nvm/versions/node/v24.14.0/lib/node_modules/@mariozechner/pi-coding-agent/docs/packages.md`, `/Users/magimetal/.nvm/versions/node/v24.14.0/lib/node_modules/@mariozechner/pi-coding-agent/docs/settings.md`, example repos `/Users/magimetal/Dev/pi/pi-gizmo` and `/Users/magimetal/Dev/pi/pi-system-prompt`
@@ -46,16 +46,16 @@ This affects Pi users who want deterministic control over which skills load auto
 
 ## Acceptance Criteria
 
-- [ ] Repo root contains publishable Pi package metadata with `pi-package` discoverability, documented Pi manifest or convention-directory usage, and install surface compatible with `pi install` from local path and git source.
-- [ ] Package registers exactly two user-facing command entrypoints: `/sc:global` and `/sc:project`.
-- [ ] `/sc:global` can enable or disable one individual skill by name in `~/.pi/agent/settings.json` without deleting unrelated keys or unrelated package/resource filters.
-- [ ] `/sc:project` can enable or disable one individual skill by name in `.pi/settings.json`, creating `.pi/settings.json` when missing and preserving unrelated project settings when file already exists.
-- [ ] When both scopes define behavior for same package or skill, project-scope behavior follows documented Pi override semantics instead of inventing conflicting precedence rules.
-- [ ] Command output clearly states action taken, target skill, target scope, exact file path changed, and resulting state; no silent file mutation.
-- [ ] README documents install instructions, command grammar, global-versus-project behavior, project settings auto-creation behavior, and at least one worked example for each scope.
-- [ ] `CHANGELOG.md` exists in Keep a Changelog format and includes initial user-facing entry for `pi-skill-controller`, referencing PRD-0001.
-- [ ] Automated tests cover command registration, settings-file mutation, preservation of unrelated settings keys, and project `.pi/settings.json` bootstrap behavior.
-- [ ] Verification flow includes package-focused checks appropriate for a publishable Pi package, including package artifact/installability validation modeled after example repos.
+- [x] Repo root contains publishable Pi package metadata with `pi-package` discoverability, documented Pi manifest or convention-directory usage, and install surface compatible with `pi install` from local path and git source.
+- [x] Package registers exactly two user-facing command entrypoints: `/sc:global` and `/sc:project`.
+- [x] `/sc:global` can enable or disable one individual skill by name in `~/.pi/agent/settings.json` without deleting unrelated keys or unrelated package/resource filters.
+- [x] `/sc:project` can enable or disable one individual skill by name in `.pi/settings.json`, creating `.pi/settings.json` when missing and preserving unrelated project settings when file already exists.
+- [x] When both scopes define behavior for same package or skill, project-scope behavior follows documented Pi override semantics instead of inventing conflicting precedence rules.
+- [x] Command output clearly states action taken, target skill, target scope, exact file path changed, and resulting state; no silent file mutation.
+- [x] README documents install instructions, command grammar, global-versus-project behavior, project settings auto-creation behavior, and at least one worked example for each scope.
+- [x] `CHANGELOG.md` exists in Keep a Changelog format and includes initial user-facing entry for `pi-skill-controller`, referencing PRD-0001.
+- [x] Automated tests cover command registration, settings-file mutation, preservation of unrelated settings keys, and project `.pi/settings.json` bootstrap behavior.
+- [x] Verification flow includes package-focused checks appropriate for a publishable Pi package, including package artifact/installability validation modeled after example repos.
 
 ## Technical Surface
 
@@ -77,13 +77,27 @@ This affects Pi users who want deterministic control over which skills load auto
 - Commands should feel safe and operational, not magical. No hidden background edits.
 - README examples should make override behavior obvious: global default plus project-specific exception.
 
+## Completion Summary
+
+Implementation shipped in repo as package `pi-skill-controller` with command surfaces `/sc:global` and `/sc:project`, supporting scoped skill toggling through Pi settings mutation at global and project levels. Delivered artifacts include package metadata for `pi install`, extension command registration, settings bootstrap for missing project `.pi/settings.json`, automated tests, `README.md`, `CHANGELOG.md`, and CI coverage.
+
+Implementation completed on commit `f884e46`, pushed to `main`. Related ADR was not created because delivered scope stayed within documented Pi package and settings behavior already referenced in this PRD.
+
+## Verification Outcome
+
+Observed verification completed after implementation and post-push git-source validation:
+
+- Automated tests passed for command registration, settings mutation, unrelated-settings preservation, and project bootstrap behavior.
+- Package install flow validated from local path and git source.
+- Repository documentation and release artifacts present: `README.md`, `CHANGELOG.md`, CI workflow, package metadata.
+- Post-push git-source verification completed against commit `f884e46` on `main`.
+
 ## Open Questions
 
-- What exact documented settings representation should v1 mutate for per-skill enable/disable when skills may come from package manifests, skill directories, or explicit `skills` settings paths?
-- Should v1 operate on all discovered skills in active config, or only package-managed skills whose load behavior can be expressed through documented filters without ambiguity?
-- What final command grammar best balances clarity and brevity: positional verbs (`/sc:global disable gizmo`) versus flag-style arguments?
+None. Original scope questions resolved during implementation using documented Pi package and settings behavior.
 
 ## Revision History
 
 - 2026-04-22: Draft created
 - 2026-04-22: Promoted Draft → Active; implementation begins per plan `docs/plans/pi-skill-controller-package-implementation.md` (PLAN_REVIEW PASS).
+- 2026-04-22: Marked Active → Completed; recorded delivered package, verification outcome, and pushed commit `f884e46` on `main`.

@@ -83,4 +83,4 @@ Maintain in `docs/prd/README.md`:
 | PRD  | Title                                                | Status | Date       |
 | ---- | ---------------------------------------------------- | ------ | ---------- |
 | 0000 | Template                                             | Active | 2026-04-22 |
-| 0001 | Pi Skill Controller Package and Scoped Skill Loading | Active | 2026-04-22 |
+| 0001 | Pi Skill Controller Package and Scoped Skill Loading | Completed | 2026-04-22 |
