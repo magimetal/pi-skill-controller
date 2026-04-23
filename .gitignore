@@ -1,0 +1,5 @@
+node_modules/
+coverage/
+.pi-lens/
+*.tgz
+.DS_Store

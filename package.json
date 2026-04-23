@@ -1,0 +1,57 @@
+{
+  "name": "pi-skill-controller",
+  "version": "0.1.0",
+  "description": "Publishable Pi package adding scoped interactive skill controls via /sc:global and /sc:project.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Magi Metal",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "keywords": [
+    "pi-package",
+    "pi-skill-controller",
+    "pi-extension",
+    "pi-coding-agent",
+    "skills",
+    "settings"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/magimetal/pi-skill-controller.git"
+  },
+  "homepage": "https://github.com/magimetal/pi-skill-controller",
+  "bugs": {
+    "url": "https://github.com/magimetal/pi-skill-controller/issues"
+  },
+  "files": [
+    "extensions",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "vitest --run",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm test"
+  },
+  "pi": {
+    "extensions": [
+      "./extensions/skill-controller.ts"
+    ]
+  },
+  "peerDependencies": {
+    "@mariozechner/pi-coding-agent": "*",
+    "@mariozechner/pi-tui": "*"
+  },
+  "devDependencies": {
+    "@mariozechner/pi-coding-agent": "0.68.0",
+    "@mariozechner/pi-tui": "0.68.0",
+    "@types/node": "25.6.0",
+    "typescript": "6.0.3",
+    "vitest": "4.1.0"
+  }
+}
