@@ -6,6 +6,10 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Bumped `@mariozechner/pi-coding-agent` and `@mariozechner/pi-tui` dev dependencies to `0.69.0` so package validates against Pi's TypeBox 1.x migration and current extension APIs.
+
 ## [0.1.0] - 2026-04-22
 
 ### Added
