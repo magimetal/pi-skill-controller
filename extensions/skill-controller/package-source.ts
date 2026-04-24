@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { resolveSettingsPath } from "./path-utils.js";
 import type {
   ScopeSettings,
   SettingsData,
@@ -108,7 +109,7 @@ export function parseGitPackageSource(source: string): ParsedGitSource | null {
   };
 }
 
-export function getPackageIdentity(source: string, settingsBaseDir: string): string {
+export function getPackageIdentity(source: string, settingsBaseDir: string, homeDir = process.env.HOME ?? ""): string {
   if (source.startsWith("npm:")) {
     return `npm:${parseNpmPackageName(source)}`;
   }
@@ -118,12 +119,12 @@ export function getPackageIdentity(source: string, settingsBaseDir: string): str
     return `git:${gitSource.host}/${gitSource.repoPath}`;
   }
 
-  return `local:${normalizeSlashes(path.resolve(settingsBaseDir, source))}`;
+  return `local:${normalizeSlashes(resolveSettingsPath(settingsBaseDir, source, homeDir))}`;
 }
 
-export function getPackageEntryIdentity(entry: SettingsPackageEntry, settingsBaseDir: string): string {
+export function getPackageEntryIdentity(entry: SettingsPackageEntry, settingsBaseDir: string, homeDir = process.env.HOME ?? ""): string {
   const source = typeof entry === "string" ? entry : entry.source;
-  return getPackageIdentity(source, settingsBaseDir);
+  return getPackageIdentity(source, settingsBaseDir, homeDir);
 }
 
 function getNpmCommand(settings: SettingsData): { command: string; args: string[] } {
@@ -181,7 +182,7 @@ export function resolvePackageRoot(
     if (gitSource) {
       packageRoot = path.join(scopeSettings.baseDir, "git", gitSource.host, ...gitSource.repoPath.split("/"));
     } else {
-      packageRoot = path.resolve(scopeSettings.baseDir, source);
+      packageRoot = resolveSettingsPath(scopeSettings.baseDir, source, scopeSettings.homeDir);
     }
   }
 

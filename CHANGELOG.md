@@ -8,6 +8,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- `~/` paths in settings skill entries and local package sources now expand to the current home directory before discovery.
 - Overlay skill list now adapts to terminal height instead of using a hardcoded 10-skill window, so all skills are reachable without resizing the terminal.
 - `↑` and `↓` arrow keys reliably scroll through the full skill list on Mac keyboards; viewport follows the selection.
 - Added scroll indicators (`↑ N more above` / `↓ N more below`) so users can see how many items remain off-screen.

@@ -89,6 +89,46 @@ describe("skill discovery", () => {
     expect(gitSkill?.packageRef?.packageRoot).toBe(gitPackageDir);
   });
 
+  it("expands ~/ entries in top-level settings skills", () => {
+    const fixture = createFixtureRoot();
+    const homeSkillsDir = path.join(fixture.homeDir, "Dev", "magi-skills", "skills");
+
+    writeSkill(path.join(homeSkillsDir, "home-skill"), "home-skill");
+    writeJson(path.join(fixture.homeDir, ".pi", "agent", "settings.json"), {
+      skills: ["~/Dev/magi-skills/skills"],
+    });
+
+    const result = discoverSkillsForScope("global", {
+      cwd: fixture.repoDir,
+      homeDir: fixture.homeDir,
+    });
+
+    const skill = result.skills.find((entry) => entry.name === "home-skill");
+    expect(skill?.sourceKind).toBe("settings");
+    expect(skill?.skillDirPath).toBe(path.join(homeSkillsDir, "home-skill"));
+    expect(skill?.enabled).toBe(true);
+  });
+
+  it("expands ~/ local package sources", () => {
+    const fixture = createFixtureRoot();
+    const packageDir = path.join(fixture.homeDir, "Dev", "fixture-package");
+
+    writePackage(packageDir, ["home-package-skill"]);
+    writeJson(path.join(fixture.homeDir, ".pi", "agent", "settings.json"), {
+      packages: ["~/Dev/fixture-package"],
+    });
+
+    const result = discoverSkillsForScope("global", {
+      cwd: fixture.repoDir,
+      homeDir: fixture.homeDir,
+    });
+
+    const skill = result.skills.find((entry) => entry.name === "home-package-skill");
+    expect(skill?.sourceKind).toBe("package");
+    expect(skill?.packageRef?.identity).toBe(`local:${packageDir}`);
+    expect(skill?.packageRef?.packageRoot).toBe(packageDir);
+  });
+
   it("discovers globally installed scoped npm package skills", () => {
     const fixture = createFixtureRoot();
     const globalNpmRoot = path.join(fixture.rootDir, "global-npm", "node_modules");
