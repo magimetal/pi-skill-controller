@@ -6,6 +6,20 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Overlay skill list now adapts to terminal height instead of using a hardcoded 10-skill window, so all skills are reachable without resizing the terminal.
+- `↑` and `↓` arrow keys reliably scroll through the full skill list on Mac keyboards; viewport follows the selection.
+- Added scroll indicators (`↑ N more above` / `↓ N more below`) so users can see how many items remain off-screen.
+- Controls line now shows `↑↓ navigate` to make arrow-key navigation discoverable.
+- Footer displays total filtered skill count for orientation in long lists.
+- Overlay passes `maxHeight: "90%"` to prevent the panel from exceeding terminal bounds.
+
+### Added
+
+- `maxSkillsForHeight()` helper that computes how many skills fit for a given terminal height.
+- Automated test suite (`skill-controller.ui-scroll.test.ts`) covering long-list navigation, scroll indicators, viewport centering, boundary clamping, and filtering behavior with 40+ skills.
+
 ### Changed
 
 - Bumped `@mariozechner/pi-coding-agent` and `@mariozechner/pi-tui` dev dependencies to `0.69.0` so package validates against Pi's TypeBox 1.x migration and current extension APIs.
