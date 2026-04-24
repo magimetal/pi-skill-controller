@@ -110,6 +110,7 @@ export function updatePackageSkillState(
   packages: SettingsPackageEntry[],
   packageIdentity: string,
   settingsBaseDir: string,
+  settingsHomeDir: string,
   relativeSkillDirPath: string,
   enabled: boolean,
   fallbackSource: string,
@@ -117,7 +118,7 @@ export function updatePackageSkillState(
 ): SettingsPackageEntry[] {
   const nextPackages = [...packages];
   const index = nextPackages.findIndex(
-    (entry) => getPackageEntryIdentity(entry, settingsBaseDir) === packageIdentity,
+    (entry) => getPackageEntryIdentity(entry, settingsBaseDir, settingsHomeDir) === packageIdentity,
   );
   const current = index >= 0 ? toObjectEntry(nextPackages[index]!) : { source: fallbackSource };
 
@@ -187,6 +188,7 @@ export function applySkillEnabledState(
       settings.data.packages ?? [],
       packageRef.identity,
       settings.baseDir,
+      settings.homeDir,
       skill.relativeSkillDirPath,
       enabled,
       normalizePackageSourceForScope(packageRef, settings),

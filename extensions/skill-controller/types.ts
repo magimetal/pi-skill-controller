@@ -23,6 +23,7 @@ export interface ScopeSettings {
   scope: Scope;
   settingsPath: string;
   baseDir: string;
+  homeDir: string;
   exists: boolean;
   data: SettingsData;
 }

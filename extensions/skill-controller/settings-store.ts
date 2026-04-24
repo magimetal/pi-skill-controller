@@ -41,6 +41,7 @@ export function loadScopeSettings(
     scope,
     settingsPath,
     baseDir: path.dirname(settingsPath),
+    homeDir,
     exists,
     data,
   };

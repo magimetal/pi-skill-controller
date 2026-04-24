@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { getPackageIdentity, resolvePackageRoot } from "./package-source.js";
+import { expandHomePathSelector, resolveSettingsPath } from "./path-utils.js";
 import { evaluateExactPathEntries, normalizeExactPath } from "./serialization.js";
 import { loadScopeSettings } from "./settings-store.js";
 import type {
@@ -104,11 +105,12 @@ function discoverFromTopLevelSkills(
   skills: SkillRecord[],
   seen: Set<string>,
 ): void {
+  const expandedSkillEntries = scopeSettings.data.skills?.map((entry) => expandHomePathSelector(entry, scopeSettings.homeDir));
   for (const entry of scopeSettings.data.skills ?? []) {
     if (entry.startsWith("+") || entry.startsWith("-") || entry.startsWith("!") || entry.includes("*")) {
       continue;
     }
-    const resolved = path.resolve(scopeSettings.baseDir, entry);
+    const resolved = resolveSettingsPath(scopeSettings.baseDir, entry, scopeSettings.homeDir);
     for (const skillPath of collectSkillDirs(resolved, fsApi)) {
       const skillDirPath = skillPath.endsWith(".md") ? skillPath : skillPath;
       const relativeSkillPath = normalizeExactPath(scopeSettings.baseDir, skillDirPath);
@@ -125,7 +127,7 @@ function discoverFromTopLevelSkills(
         ownerScope: scopeSettings.scope,
         targetScope,
         targetSettingsPath: targetScope === "global" ? scopeSettings.settingsPath : path.join(path.dirname(scopeSettings.baseDir), ".pi", "settings.json"),
-        enabled: evaluateExactPathEntries(scopeSettings.data.skills, relativeSkillPath, true),
+        enabled: evaluateExactPathEntries(expandedSkillEntries, relativeSkillPath, true),
       }, seen);
     }
   }
@@ -170,7 +172,7 @@ function discoverFromPackages(
 ): void {
   for (const [entryIndex, pkg] of (scopeSettings.data.packages ?? []).entries()) {
     const source = typeof pkg === "string" ? pkg : pkg.source;
-    const identity = getPackageIdentity(source, scopeSettings.baseDir);
+    const identity = getPackageIdentity(source, scopeSettings.baseDir, scopeSettings.homeDir);
     const packageRoot = resolvePackageRoot(source, scopeSettings, {
       execFileSync: deps.execFileSync,
       existsSync: fsApi.existsSync,
