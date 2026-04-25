@@ -18,6 +18,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Generated hierarchical `AGENTS.md` repo guidance for root, skill-controller extension code, and tests.
 - `maxSkillsForHeight()` helper that computes how many skills fit for a given terminal height.
 - Automated test suite (`skill-controller.ui-scroll.test.ts`) covering long-list navigation, scroll indicators, viewport centering, boundary clamping, and filtering behavior with 40+ skills.
 
