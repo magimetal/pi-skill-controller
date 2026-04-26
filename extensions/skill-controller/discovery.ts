@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { getPackageIdentity, resolvePackageRoot } from "./package-source.js";
 import { expandHomePathSelector, resolveSettingsPath } from "./path-utils.js";
-import { evaluateExactPathEntries, normalizeExactPath } from "./serialization.js";
+import { evaluateExactPathEntries, evaluateOverridePathEntries, normalizeExactPath } from "./serialization.js";
 import { loadScopeSettings } from "./settings-store.js";
 import type {
   DiscoveryResult,
@@ -32,6 +32,16 @@ function createFs(deps: SkillControllerDependencies): FileSystemApi {
 
 function normalizeName(name: string): string {
   return name.replace(/\\/g, "/");
+}
+
+function isOverrideSkillEntry(entry: string): boolean {
+  return entry.startsWith("+") || entry.startsWith("-") || entry.startsWith("!");
+}
+
+function expandOverrideSkillEntries(scopeSettings: ScopeSettings): string[] | undefined {
+  return scopeSettings.data.skills
+    ?.filter(isOverrideSkillEntry)
+    .map((entry) => expandHomePathSelector(entry, scopeSettings.homeDir));
 }
 
 function resolveSkillName(skillDirPath: string, fsApi: FileSystemApi): string {
@@ -157,7 +167,7 @@ function discoverFromAutoRoot(
       ownerScope: scopeSettings.scope,
       targetScope,
       targetSettingsPath: targetScope === "global" ? scopeSettings.settingsPath : path.join(path.dirname(scopeSettings.baseDir), ".pi", "settings.json"),
-      enabled: evaluateExactPathEntries(scopeSettings.data.skills, relativeSkillPath, true),
+      enabled: evaluateOverridePathEntries(expandOverrideSkillEntries(scopeSettings), relativeSkillPath, true),
     }, seen);
   }
 }

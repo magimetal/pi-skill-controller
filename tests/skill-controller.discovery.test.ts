@@ -36,6 +36,73 @@ describe("skill discovery", () => {
 
     const auto = result.skills.find((skill) => skill.name === "global-auto");
     expect(auto?.sourceKind).toBe("auto");
+    expect(auto?.enabled).toBe(true);
+  });
+
+  it("keeps auto-discovered skills enabled when settings skills contain plain positive paths", () => {
+    const fixture = createFixtureRoot();
+    const settingsSkillsDir = path.join(fixture.homeDir, "Dev", "magi-skills", "skills");
+    const autoSkillDir = path.join(fixture.homeDir, ".agents", "skills", "auto-skill");
+
+    writeSkill(path.join(settingsSkillsDir, "settings-skill"), "settings-skill");
+    writeSkill(autoSkillDir, "auto-skill");
+    writeJson(path.join(fixture.homeDir, ".pi", "agent", "settings.json"), {
+      skills: ["~/Dev/magi-skills/skills"],
+    });
+
+    const result = discoverSkillsForScope("global", {
+      cwd: fixture.repoDir,
+      homeDir: fixture.homeDir,
+    });
+
+    const autoSkill = result.skills.find((skill) => skill.name === "auto-skill");
+    expect(autoSkill?.sourceKind).toBe("auto");
+    expect(autoSkill?.enabled).toBe(true);
+  });
+
+  it("applies explicit auto-discovered skill disable and enable overrides", () => {
+    const fixture = createFixtureRoot();
+    const autoRoot = path.join(fixture.homeDir, ".agents", "skills");
+    const autoSkillDir = path.join(autoRoot, "auto-skill");
+    const otherAutoSkillDir = path.join(autoRoot, "other-auto-skill");
+
+    writeSkill(autoSkillDir, "auto-skill");
+    writeSkill(otherAutoSkillDir, "other-auto-skill");
+    writeJson(path.join(fixture.homeDir, ".pi", "agent", "settings.json"), {
+      skills: [`-${autoSkillDir}`, `!${otherAutoSkillDir}`],
+    });
+
+    const disabledResult = discoverSkillsForScope("global", {
+      cwd: fixture.repoDir,
+      homeDir: fixture.homeDir,
+    });
+
+    expect(disabledResult.skills.find((skill) => skill.name === "auto-skill")?.enabled).toBe(false);
+    expect(disabledResult.skills.find((skill) => skill.name === "other-auto-skill")?.enabled).toBe(false);
+
+    writeJson(path.join(fixture.homeDir, ".pi", "agent", "settings.json"), {
+      skills: [`-${autoRoot}`, `+${autoSkillDir}`],
+    });
+
+    const enabledResult = discoverSkillsForScope("global", {
+      cwd: fixture.repoDir,
+      homeDir: fixture.homeDir,
+    });
+
+    expect(enabledResult.skills.find((skill) => skill.name === "auto-skill")?.enabled).toBe(true);
+    expect(enabledResult.skills.find((skill) => skill.name === "other-auto-skill")?.enabled).toBe(false);
+
+    writeJson(path.join(fixture.homeDir, ".pi", "agent", "settings.json"), {
+      skills: [`+${autoSkillDir}`],
+    });
+
+    const positiveOnlyResult = discoverSkillsForScope("global", {
+      cwd: fixture.repoDir,
+      homeDir: fixture.homeDir,
+    });
+
+    expect(positiveOnlyResult.skills.find((skill) => skill.name === "auto-skill")?.enabled).toBe(true);
+    expect(positiveOnlyResult.skills.find((skill) => skill.name === "other-auto-skill")?.enabled).toBe(true);
   });
 
   it("keeps duplicate names distinct with source labels", () => {

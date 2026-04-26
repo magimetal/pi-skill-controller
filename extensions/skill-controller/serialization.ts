@@ -69,6 +69,28 @@ export function evaluateExactPathEntries(
   return included;
 }
 
+export function evaluateOverridePathEntries(
+  entries: string[] | undefined,
+  relativePath: string,
+  defaultIncluded: boolean,
+): boolean {
+  let included = defaultIncluded;
+
+  for (const entry of entries ?? []) {
+    if (entry.startsWith("-") || entry.startsWith("!")) {
+      if (matchesLiteralSelector(entry.slice(1), relativePath)) {
+        included = false;
+      }
+      continue;
+    }
+    if (entry.startsWith("+") && matchesLiteralSelector(entry.slice(1), relativePath)) {
+      included = true;
+    }
+  }
+
+  return included;
+}
+
 export function ensureTopLevelSkillState(
   settings: SettingsData,
   relativeSkillDirPath: string,
