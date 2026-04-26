@@ -137,6 +137,7 @@ export function updatePackageSkillState(
   enabled: boolean,
   fallbackSource: string,
   carryForward?: Pick<SettingsPackageFilterEntry, "extensions" | "prompts" | "themes">,
+  forcePositiveWhenEnabled = false,
 ): SettingsPackageEntry[] {
   const nextPackages = [...packages];
   const index = nextPackages.findIndex(
@@ -157,6 +158,10 @@ export function updatePackageSkillState(
   if (!enabled) {
     filtered.push(negativeEntry);
   } else if (hasPositiveSelectors && !filtered.some((entry) => matchesLiteralSelector(isPrefixed(entry) ? entry.slice(1) : entry, relativeSkillDirPath))) {
+    filtered.push(positiveEntry);
+  }
+
+  if (enabled && forcePositiveWhenEnabled && !filtered.some((entry) => matchesLiteralSelector(isPrefixed(entry) ? entry.slice(1) : entry, relativeSkillDirPath))) {
     filtered.push(positiveEntry);
   }
 
@@ -215,6 +220,7 @@ export function applySkillEnabledState(
       enabled,
       normalizePackageSourceForScope(packageRef, settings),
       inheritedPackageRef?.nonSkillFilters,
+      inheritedPackageRef !== undefined && enabled && !skill.enabled,
     );
     return;
   }

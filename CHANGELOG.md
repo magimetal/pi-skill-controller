@@ -8,6 +8,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Project-scope saves now write explicit package skill enable overrides when project `.pi/settings.json` is empty and the skill is disabled by global settings.
 - Auto-discovered skills now remain enabled when settings contain plain positive skill paths, while explicit `+`, `-`, and `!` overrides still control their enabled state.
 - `~/` paths in settings skill entries and local package sources now expand to the current home directory before discovery.
 - Overlay skill list now adapts to terminal height instead of using a hardcoded 10-skill window, so all skills are reachable without resizing the terminal.

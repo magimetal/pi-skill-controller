@@ -107,6 +107,47 @@ describe("settings store", () => {
     ]);
   });
 
+  it("writes a project enable override for a globally disabled package skill when project settings is empty", () => {
+    const fixture = createFixtureRoot();
+    const packageDir = path.join(fixture.homeDir, ".pi", "agent", "packages", "fixture-package");
+    const projectSettingsPath = path.join(fixture.repoDir, ".pi", "settings.json");
+
+    writePackage(packageDir, ["packaged-skill"]);
+    writeJson(path.join(fixture.homeDir, ".pi", "agent", "settings.json"), {
+      packages: [
+        {
+          source: "./packages/fixture-package",
+          skills: ["-skills/packaged-skill"],
+        },
+      ],
+    });
+    writeJson(projectSettingsPath, {});
+
+    const discovery = discoverSkillsForScope("project", {
+      cwd: fixture.repoDir,
+      homeDir: fixture.homeDir,
+    });
+    const skill = discovery.skills.find((entry) => entry.name === "packaged-skill");
+    expect(skill?.enabled).toBe(false);
+
+    const summary = saveSkillChanges(
+      "project",
+      discovery.project,
+      discovery.skills,
+      [{ skillId: skill!.id, enabled: true }],
+    );
+
+    expect(summary.createdSettingsFile).toBe(false);
+    expect(JSON.parse(fs.readFileSync(projectSettingsPath, "utf8"))).toEqual({
+      packages: [
+        {
+          source: path.join(fixture.homeDir, ".pi", "agent", "packages", "fixture-package").split(path.sep).join("/"),
+          skills: ["+skills/packaged-skill"],
+        },
+      ],
+    });
+  });
+
   it("removes package skills key after disable then re-enable in same scope", () => {
     const fixture = createFixtureRoot();
     const packageDir = path.join(fixture.homeDir, ".pi", "agent", "packages", "fixture-package");
