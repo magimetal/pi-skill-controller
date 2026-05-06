@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SkillControllerOverlay, maxSkillsForHeight } from "../extensions/skill-controller/ui.js";
+import { SkillControllerOverlay, maxSkillsForHeight, maxSkillsForTerminalRows } from "../extensions/skill-controller/ui.js";
 import type { SkillControllerUISelection, SkillRecord } from "../extensions/skill-controller/types.js";
 
 const theme = {
@@ -71,6 +71,29 @@ function selectedSkillName(overlay: SkillControllerOverlay, width = 120): string
 }
 
 describe("maxSkillsForHeight", () => {
+  it("keeps the rendered list within a 90% overlay height", () => {
+    const skills = createSkills(40);
+    const overlayHeight = Math.floor(40 * 0.9);
+    const maxVisible = maxSkillsForTerminalRows(40);
+    const { overlay } = createOverlay(skills, maxVisible);
+
+    expect(overlay.render(120).length).toBeLessThanOrEqual(overlayHeight);
+  });
+
+  it("keeps the rendered middle-scroll list within a 90% overlay height", () => {
+    const skills = createSkills(40);
+    const overlayHeight = Math.floor(40 * 0.9);
+    const maxVisible = maxSkillsForTerminalRows(40);
+    const { overlay } = createOverlay(skills, maxVisible);
+
+    pressDown(overlay, 20);
+    const text = renderText(overlay);
+
+    expect(text).toContain("more above");
+    expect(text).toContain("more below");
+    expect(overlay.render(120).length).toBeLessThanOrEqual(overlayHeight);
+  });
+
   it("returns at least 1 for very small terminals", () => {
     expect(maxSkillsForHeight(10)).toBeGreaterThanOrEqual(1);
     expect(maxSkillsForHeight(5)).toBe(1);
@@ -83,12 +106,12 @@ describe("maxSkillsForHeight", () => {
   });
 
   it("computes expected values for common terminal heights", () => {
-    // 24 rows: 24 - 10 chrome - 2 indicators = 12 available / 2 rows per skill = 6
-    expect(maxSkillsForHeight(24)).toBe(6);
-    // 40 rows: 40 - 12 = 28 / 2 = 14
-    expect(maxSkillsForHeight(40)).toBe(14);
-    // 60 rows: 60 - 12 = 48 / 2 = 24
-    expect(maxSkillsForHeight(60)).toBe(24);
+    // 24 rows: 24 - 11 chrome - 2 indicators = 11 available / 2 rows per skill = 5
+    expect(maxSkillsForHeight(24)).toBe(5);
+    // 40 rows: 40 - 13 = 27 / 2 = 13
+    expect(maxSkillsForHeight(40)).toBe(13);
+    // 60 rows: 60 - 13 = 47 / 2 = 23
+    expect(maxSkillsForHeight(60)).toBe(23);
   });
 });
 
