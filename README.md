@@ -70,12 +70,16 @@ Keys:
 - type text to filter
 - `Backspace` edit filter
 - `Enter` toggle selected skill in memory only
+- `Ctrl+A` enable all currently filtered skills in memory only
+- `Ctrl+D` disable all currently filtered skills in memory only
 - `Ctrl+S` save to settings file
 - `Esc` cancel without writing
 
 Important behavior:
 
-- toggles do **not** write on selection
+- toggles and bulk actions do **not** write on selection
+- bulk actions apply to the current filtered skill list
+- individual `Enter` toggles still work after a bulk action and determine final pending state
 - write happens only on `Ctrl+S`
 - cancel path leaves files unchanged
 - success message reports scope, resulting state, and exact file path written

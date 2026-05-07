@@ -365,3 +365,99 @@ describe("default maxVisibleSkills", () => {
     expect(overlay.maxVisibleSkills).toBe(8);
   });
 });
+
+describe("bulk enable and disable controls", () => {
+  it("bulk disables filtered skills only when saved", () => {
+    const skills = createSkills(4);
+    const { overlay, results } = createOverlay(skills);
+
+    overlay.handleInput("\u0004"); // Ctrl+D disables all currently filtered skills.
+
+    expect(results).toEqual([]);
+    expect(renderText(overlay)).toContain("Unsaved changes: 4");
+
+    overlay.handleInput("\u0013"); // Ctrl+S
+    expect(results).toEqual([
+      {
+        type: "save",
+        changes: skills.map((skill) => ({ skillId: skill.id, enabled: false })),
+      },
+    ]);
+  });
+
+  it("bulk enables filtered skills only when saved", () => {
+    const skills = createSkills(4).map((skill) => ({ ...skill, enabled: false }));
+    const { overlay, results } = createOverlay(skills);
+
+    overlay.handleInput("\u0001"); // Ctrl+A enables all currently filtered skills.
+
+    expect(results).toEqual([]);
+    expect(renderText(overlay)).toContain("Unsaved changes: 4");
+
+    overlay.handleInput("\u0013"); // Ctrl+S
+    expect(results).toEqual([
+      {
+        type: "save",
+        changes: skills.map((skill) => ({ skillId: skill.id, enabled: true })),
+      },
+    ]);
+  });
+
+  it("allows individual toggles after a bulk action to decide final state", () => {
+    const skills = createSkills(3);
+    const { overlay, results } = createOverlay(skills);
+
+    overlay.handleInput("\u0004"); // Ctrl+D
+    overlay.handleInput("\r"); // Enter toggles selected skill back to enabled.
+    overlay.handleInput("\u0013"); // Ctrl+S
+
+    expect(results).toEqual([
+      {
+        type: "save",
+        changes: [
+          { skillId: "skill-1", enabled: false },
+          { skillId: "skill-2", enabled: false },
+        ],
+      },
+    ]);
+  });
+
+  it("applies bulk actions to the current filtered skill list", () => {
+    const skills = createSkills(12);
+    const { overlay, results } = createOverlay(skills);
+
+    overlay.handleInput("1");
+    overlay.handleInput("\u0004"); // Ctrl+D
+    overlay.handleInput("\u0013"); // Ctrl+S
+
+    expect(results).toEqual([
+      {
+        type: "save",
+        changes: [
+          { skillId: "skill-1", enabled: false },
+          { skillId: "skill-10", enabled: false },
+          { skillId: "skill-11", enabled: false },
+        ],
+      },
+    ]);
+  });
+
+  it("cancels bulk pending changes on Esc", () => {
+    const skills = createSkills(3);
+    const { overlay, results } = createOverlay(skills);
+
+    overlay.handleInput("\u0004"); // Ctrl+D
+    overlay.handleInput("\u001b"); // Esc
+
+    expect(results).toEqual([{ type: "cancel", changes: [] }]);
+  });
+
+  it("documents bulk controls in the overlay help text", () => {
+    const skills = createSkills(3);
+    const { overlay } = createOverlay(skills);
+    const text = renderText(overlay);
+
+    expect(text).toContain("Ctrl+A enable filtered");
+    expect(text).toContain("Ctrl+D disable filtered");
+  });
+});
