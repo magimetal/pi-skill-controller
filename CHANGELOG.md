@@ -16,6 +16,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Added scroll indicators (`↑ N more above` / `↓ N more below`) so users can see how many items remain off-screen.
 - Controls line now shows `↑↓ navigate` to make arrow-key navigation discoverable.
 - Footer displays total filtered skill count for orientation in long lists.
+- Skill-controller modal list entries now split name, enabled state/source, and relative path across separate rows for less dense scanning while preserving existing controls and filtering behavior.
 - Overlay passes `maxHeight: "90%"` and computes the skill viewport against the same cap, including fixed chrome and scroll-indicator rows, to keep footer/help controls visible when many skills overflow.
 
 ### Added

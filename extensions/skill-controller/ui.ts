@@ -29,8 +29,8 @@ function truncate(value: string, width: number): string {
  */
 const CHROME_ROWS_BASE = 11;
 
-/** Each skill occupies exactly 2 rendered rows (label + path). */
-const ROWS_PER_SKILL = 2;
+/** Each skill occupies exactly 3 rendered rows (name, state/source, path). */
+const ROWS_PER_SKILL = 3;
 
 /** Fallback when no height hint is available. */
 const DEFAULT_MAX_VISIBLE_SKILLS = 20;
@@ -182,8 +182,8 @@ export class SkillControllerOverlay implements Component, Focusable {
         const selected = absoluteIndex === this.selectedIndex;
         const state = this.getEnabled(skill) ? this.theme.fg("success", "enabled") : this.theme.fg("error", "disabled");
         const marker = selected ? this.theme.fg("accent", "▶") : " ";
-        const label = `${marker} ${skill.name} · ${state} · ${skill.sourceLabel}`;
-        rows.push(wrap(label));
+        rows.push(wrap(` ${marker} ${skill.name}`));
+        rows.push(wrap(`   ${state} · ${truncate(skill.sourceLabel, inner - 5)}`));
         rows.push(wrap(`   ${truncate(skill.relativeSkillDirPath, inner - 3)}`));
       }
 
@@ -206,7 +206,7 @@ export class SkillControllerOverlay implements Component, Focusable {
 
 /**
  * Compute the maximum number of skills that fit in the overlay given an
- * available overlay height. Accounts for chrome rows and 2 rows per skill,
+ * available overlay height. Accounts for chrome rows and 3 rows per skill,
  * plus up to 2 scroll-indicator rows.
  */
 export function maxSkillsForHeight(overlayHeight: number): number {

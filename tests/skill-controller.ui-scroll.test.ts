@@ -106,12 +106,12 @@ describe("maxSkillsForHeight", () => {
   });
 
   it("computes expected values for common terminal heights", () => {
-    // 24 rows: 24 - 11 chrome - 2 indicators = 11 available / 2 rows per skill = 5
-    expect(maxSkillsForHeight(24)).toBe(5);
-    // 40 rows: 40 - 13 = 27 / 2 = 13
-    expect(maxSkillsForHeight(40)).toBe(13);
-    // 60 rows: 60 - 13 = 47 / 2 = 23
-    expect(maxSkillsForHeight(60)).toBe(23);
+    // 24 rows: 24 - 11 chrome - 2 indicators = 11 available / 3 rows per skill = 3
+    expect(maxSkillsForHeight(24)).toBe(3);
+    // 40 rows: 40 - 13 = 27 / 3 = 9
+    expect(maxSkillsForHeight(40)).toBe(9);
+    // 60 rows: 60 - 13 = 47 / 3 = 15
+    expect(maxSkillsForHeight(60)).toBe(15);
   });
 });
 
@@ -124,6 +124,17 @@ describe("overlay with 40+ skills", () => {
     for (const skill of skills) {
       expect(text).toContain(skill.name);
     }
+  });
+
+  it("splits skill rows into name, state/source, and relative path for readability", () => {
+    const skills = createSkills(1);
+    const { overlay } = createOverlay(skills, 5);
+    const lines = overlay.render(120);
+    const nameLineIndex = lines.findIndex((line) => line.includes("▶ skill-000"));
+
+    expect(nameLineIndex).toBeGreaterThanOrEqual(0);
+    expect(lines[nameLineIndex + 1]).toContain("enabled · ~/.pi/agent/skills");
+    expect(lines[nameLineIndex + 2]).toContain("skills/skill-0");
   });
 
   it("limits visible skills to maxVisibleSkills", () => {
