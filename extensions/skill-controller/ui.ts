@@ -22,12 +22,12 @@ function truncate(value: string, width: number): string {
 
 /**
  * Number of fixed chrome rows rendered around the skill list:
- * top border, title, controls, blank, target-file (1+ lines), blank,
+ * top border, title, controls (2 rows), blank, target-file (1+ lines), blank,
  * search, blank, [skills], blank, unsaved-changes, bottom border.
  *
- * Minimum is 11 when the target-file path fits on a single line.
+ * Minimum is 12 when the target-file path fits on a single line.
  */
-const CHROME_ROWS_BASE = 11;
+const CHROME_ROWS_BASE = 12;
 
 /** Each skill occupies exactly 2 rendered rows (label + path). */
 const ROWS_PER_SKILL = 2;
@@ -79,10 +79,24 @@ export class SkillControllerOverlay implements Component, Focusable {
     return this.pending.get(skill.id) ?? skill.enabled;
   }
 
+  private setEffectivePending(skill: SkillRecord, enabled: boolean): void {
+    if (enabled === skill.enabled) {
+      this.pending.delete(skill.id);
+      return;
+    }
+    this.pending.set(skill.id, enabled);
+  }
+
   private toggleCurrent(): void {
     const skill = this.getCurrentSkill();
     if (!skill) return;
-    this.pending.set(skill.id, !this.getEnabled(skill));
+    this.setEffectivePending(skill, !this.getEnabled(skill));
+  }
+
+  private setFilteredEnabled(enabled: boolean): void {
+    for (const skill of this.filteredSkills) {
+      this.setEffectivePending(skill, enabled);
+    }
   }
 
   handleInput(data: string): void {
@@ -96,6 +110,14 @@ export class SkillControllerOverlay implements Component, Focusable {
         enabled,
       }));
       this.done({ type: "save", changes });
+      return;
+    }
+    if (matchesKey(data, "ctrl+a")) {
+      this.setFilteredEnabled(true);
+      return;
+    }
+    if (matchesKey(data, "ctrl+d")) {
+      this.setFilteredEnabled(false);
       return;
     }
     if (matchesKey(data, "enter")) {
@@ -159,6 +181,7 @@ export class SkillControllerOverlay implements Component, Focusable {
     rows.push(this.theme.fg("border", `╭${"─".repeat(inner)}╮`));
     rows.push(wrap(` ${this.theme.bold(title)} · interactive skill control`));
     rows.push(wrap(` Scope: ${this.scope} · ↑↓ navigate · Enter toggle · Ctrl+S save · Esc cancel`));
+    rows.push(wrap(" Ctrl+A enable filtered · Ctrl+D disable filtered · bulk writes only on Ctrl+S"));
     rows.push(wrap(""));
     for (const [index, chunk] of chunkText(`Target file: ${this.targetSettingsPath}`, inner - 1).entries()) {
       rows.push(wrap(` ${index === 0 ? chunk : `  ${chunk}`}`));
