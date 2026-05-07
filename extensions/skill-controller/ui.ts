@@ -25,9 +25,9 @@ function truncate(value: string, width: number): string {
  * top border, title, controls, blank, target-file (1+ lines), blank,
  * search, blank, [skills], blank, unsaved-changes, bottom border.
  *
- * Minimum is 10 when the target-file path fits on a single line.
+ * Minimum is 11 when the target-file path fits on a single line.
  */
-const CHROME_ROWS_BASE = 10;
+const CHROME_ROWS_BASE = 11;
 
 /** Each skill occupies exactly 2 rendered rows (label + path). */
 const ROWS_PER_SKILL = 2;
@@ -205,14 +205,19 @@ export class SkillControllerOverlay implements Component, Focusable {
 }
 
 /**
- * Compute the maximum number of skills that fit in the overlay given a
- * terminal height. Accounts for chrome rows and 2 rows per skill, plus
- * up to 2 scroll-indicator rows.
+ * Compute the maximum number of skills that fit in the overlay given an
+ * available overlay height. Accounts for chrome rows and 2 rows per skill,
+ * plus up to 2 scroll-indicator rows.
  */
-export function maxSkillsForHeight(terminalHeight: number): number {
+export function maxSkillsForHeight(overlayHeight: number): number {
   // Reserve chrome rows + 2 possible scroll indicator rows
-  const available = terminalHeight - CHROME_ROWS_BASE - 2;
+  const available = overlayHeight - CHROME_ROWS_BASE - 2;
   return Math.max(1, Math.floor(available / ROWS_PER_SKILL));
+}
+
+/** Compute the skill viewport against the same 90% terminal cap used by the overlay. */
+export function maxSkillsForTerminalRows(terminalRows: number): number {
+  return maxSkillsForHeight(Math.max(1, Math.floor(terminalRows * 0.9)));
 }
 
 export async function openSkillControllerOverlay(
@@ -224,9 +229,9 @@ export async function openSkillControllerOverlay(
 ): Promise<SkillControllerUISelection> {
   return ctx.ui.custom<SkillControllerUISelection>(
     (_tui, theme, _kb, done) => {
-      // Compute height-aware skill limit from terminal dimensions.
+      // Compute height-aware skill limit from the same 90% cap used by the overlay.
       const termHeight = _tui.terminal.rows ?? 40;
-      const maxVisible = maxSkillsForHeight(termHeight);
+      const maxVisible = maxSkillsForTerminalRows(termHeight);
       return new SkillControllerOverlay(theme, scope, skills, args.trim(), targetSettingsPath, done, maxVisible);
     },
     {
