@@ -1,5 +1,5 @@
-import type { ExtensionCommandContext, Theme } from "@mariozechner/pi-coding-agent";
-import { CURSOR_MARKER, matchesKey, visibleWidth, type Component, type Focusable } from "@mariozechner/pi-tui";
+import type { ExtensionCommandContext, Theme } from "@earendil-works/pi-coding-agent";
+import { CURSOR_MARKER, matchesKey, visibleWidth, type Component, type Focusable } from "@earendil-works/pi-tui";
 import type { Scope, SkillControllerUISelection, SkillRecord, ToggleChange } from "./types.js";
 
 function chunkText(value: string, width: number): string[] {

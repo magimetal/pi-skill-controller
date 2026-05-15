@@ -9,7 +9,7 @@
 **Branch:** main
 
 ## OVERVIEW
-`pi-skill-controller` is publishable Pi package that registers `/sc:global` and `/sc:project` commands for scoped skill toggling. Stack is TypeScript ESM, Pi extension API, `@mariozechner/pi-tui`, Vitest, and npm package metadata.
+`pi-skill-controller` is publishable Pi package that registers `/sc:global` and `/sc:project` commands for scoped skill toggling. Stack is TypeScript ESM, Pi extension API, `@earendil-works/pi-tui`, Vitest, and npm package metadata.
 
 ## STRUCTURE
 ```text
