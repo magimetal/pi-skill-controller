@@ -8,6 +8,9 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Pi `0.77.0` compatibility: skill discovery and settings serialization now honor glob-based skill selectors, `!` exclusions, and `+`/`-` overrides without adding redundant package or top-level filter entries.
+- Package skill discovery now supports `pi.skills` glob include/exclude patterns while preserving literal path behavior.
+- Package skill serialization preserves existing pinned git source strings while updating skill filters.
 - Project-scope saves now write explicit package skill enable overrides when project `.pi/settings.json` is empty and the skill is disabled by global settings.
 - Auto-discovered skills now remain enabled when settings contain plain positive skill paths, while explicit `+`, `-`, and `!` overrides still control their enabled state.
 - `~/` paths in settings skill entries and local package sources now expand to the current home directory before discovery.
@@ -29,6 +32,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- Updated Pi development dependency pins and lockfile validation target from `0.74.0` to `0.77.0`.
 - Migrated Pi package imports and package metadata from `@mariozechner/*` packages to `@earendil-works/*` packages at version `0.74.0`.
 - Bumped `@mariozechner/pi-coding-agent` and `@mariozechner/pi-tui` dev dependencies to `0.69.0` so package validates against Pi's TypeBox 1.x migration and current extension APIs.
 

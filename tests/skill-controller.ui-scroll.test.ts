@@ -108,8 +108,8 @@ describe("maxSkillsForHeight", () => {
   it("computes expected values for common terminal heights", () => {
     // 24 rows: 24 - 11 chrome - 2 indicators = 11 available / 3 rows per skill = 3
     expect(maxSkillsForHeight(24)).toBe(3);
-    // 40 rows: 40 - 13 = 27 / 3 = 9
-    expect(maxSkillsForHeight(40)).toBe(9);
+    // 40 rows: 40 - 14 = 26 / 3 = 8
+    expect(maxSkillsForHeight(40)).toBe(8);
     // 60 rows: 60 - 13 = 47 / 3 = 15
     expect(maxSkillsForHeight(60)).toBe(15);
   });

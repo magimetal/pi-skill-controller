@@ -256,6 +256,258 @@ describe("settings store", () => {
     });
   });
 
+  it("does not add redundant package enable override when a glob already includes the skill", () => {
+    const fixture = createFixtureRoot();
+    const packageDir = path.join(fixture.homeDir, ".pi", "agent", "packages", "fixture-package");
+    const settingsPath = path.join(fixture.homeDir, ".pi", "agent", "settings.json");
+
+    writePackage(packageDir, ["packaged-skill"]);
+    writeJson(settingsPath, {
+      packages: [
+        {
+          source: "./packages/fixture-package",
+          extensions: ["extensions/main.ts"],
+          skills: ["skills/*"],
+        },
+      ],
+    });
+
+    const discovery = discoverSkillsForScope("global", {
+      cwd: fixture.repoDir,
+      homeDir: fixture.homeDir,
+    });
+    const skill = discovery.skills.find((entry) => entry.name === "packaged-skill");
+    expect(skill?.enabled).toBe(true);
+
+    saveSkillChanges("global", discovery.global, discovery.skills, [{ skillId: skill!.id, enabled: true }]);
+
+    expect(JSON.parse(fs.readFileSync(settingsPath, "utf8"))).toEqual({
+      packages: [
+        {
+          source: "./packages/fixture-package",
+          extensions: ["extensions/main.ts"],
+          skills: ["skills/*"],
+        },
+      ],
+    });
+  });
+
+  it("does not add redundant exact package disable when a negative glob already disables the skill", () => {
+    const fixture = createFixtureRoot();
+    const packageDir = path.join(fixture.homeDir, ".pi", "agent", "packages", "fixture-package");
+    const settingsPath = path.join(fixture.homeDir, ".pi", "agent", "settings.json");
+
+    writePackage(packageDir, ["private/foo"]);
+    writeJson(settingsPath, {
+      packages: [
+        {
+          source: "./packages/fixture-package",
+          skills: ["!skills/private/*"],
+        },
+      ],
+    });
+
+    const discovery = discoverSkillsForScope("global", {
+      cwd: fixture.repoDir,
+      homeDir: fixture.homeDir,
+    });
+    const skill = discovery.skills.find((entry) => entry.name === "private/foo");
+    expect(skill?.enabled).toBe(false);
+
+    saveSkillChanges("global", discovery.global, discovery.skills, [{ skillId: skill!.id, enabled: false }]);
+
+    expect(JSON.parse(fs.readFileSync(settingsPath, "utf8"))).toEqual({
+      packages: [
+        {
+          source: "./packages/fixture-package",
+          skills: ["!skills/private/*"],
+        },
+      ],
+    });
+  });
+
+  it("adds a top-level enable override after a negative-only glob disables the skill", () => {
+    const fixture = createFixtureRoot();
+    const settingsPath = path.join(fixture.homeDir, ".pi", "agent", "settings.json");
+
+    writeSkill(path.join(fixture.homeDir, ".pi", "agent", "skills", "private", "foo"), "foo");
+    writeJson(settingsPath, {
+      skills: ["!skills/private/*"],
+    });
+
+    const discovery = discoverSkillsForScope("global", {
+      cwd: fixture.repoDir,
+      homeDir: fixture.homeDir,
+    });
+    const skill = discovery.skills.find((entry) => entry.name === "foo");
+    expect(skill?.enabled).toBe(false);
+
+    saveSkillChanges("global", discovery.global, discovery.skills, [{ skillId: skill!.id, enabled: true }]);
+
+    expect(JSON.parse(fs.readFileSync(settingsPath, "utf8"))).toEqual({
+      skills: ["!skills/private/*", "+skills/private/foo"],
+    });
+  });
+
+  it("adds a package enable override after a matching negative glob disables the skill", () => {
+    const fixture = createFixtureRoot();
+    const packageDir = path.join(fixture.homeDir, ".pi", "agent", "packages", "fixture-package");
+    const settingsPath = path.join(fixture.homeDir, ".pi", "agent", "settings.json");
+
+    writePackage(packageDir, ["private/foo"]);
+    writeJson(settingsPath, {
+      packages: [
+        {
+          source: "./packages/fixture-package",
+          skills: ["skills/*", "!skills/private/*"],
+        },
+      ],
+    });
+
+    const discovery = discoverSkillsForScope("global", {
+      cwd: fixture.repoDir,
+      homeDir: fixture.homeDir,
+    });
+    const skill = discovery.skills.find((entry) => entry.name === "private/foo");
+    expect(skill?.enabled).toBe(false);
+
+    saveSkillChanges("global", discovery.global, discovery.skills, [{ skillId: skill!.id, enabled: true }]);
+
+    expect(JSON.parse(fs.readFileSync(settingsPath, "utf8"))).toEqual({
+      packages: [
+        {
+          source: "./packages/fixture-package",
+          skills: ["skills/*", "!skills/private/*", "+skills/private/foo"],
+        },
+      ],
+    });
+  });
+
+  it("adds a package enable override after a negative-only glob disables the skill", () => {
+    const fixture = createFixtureRoot();
+    const packageDir = path.join(fixture.homeDir, ".pi", "agent", "packages", "fixture-package");
+    const settingsPath = path.join(fixture.homeDir, ".pi", "agent", "settings.json");
+
+    writePackage(packageDir, ["private/foo"]);
+    writeJson(settingsPath, {
+      packages: [
+        {
+          source: "./packages/fixture-package",
+          skills: ["!skills/private/*"],
+        },
+      ],
+    });
+
+    const discovery = discoverSkillsForScope("global", {
+      cwd: fixture.repoDir,
+      homeDir: fixture.homeDir,
+    });
+    const skill = discovery.skills.find((entry) => entry.name === "private/foo");
+    expect(skill?.enabled).toBe(false);
+
+    saveSkillChanges("global", discovery.global, discovery.skills, [{ skillId: skill!.id, enabled: true }]);
+
+    expect(JSON.parse(fs.readFileSync(settingsPath, "utf8"))).toEqual({
+      packages: [
+        {
+          source: "./packages/fixture-package",
+          skills: ["!skills/private/*", "+skills/private/foo"],
+        },
+      ],
+    });
+  });
+
+  it("marks package skills disabled when a negated settings glob matches", () => {
+    const fixture = createFixtureRoot();
+    const packageDir = path.join(fixture.homeDir, ".pi", "agent", "packages", "fixture-package");
+
+    writePackage(packageDir, ["public-skill", "private/hidden-skill"]);
+    writeJson(path.join(fixture.homeDir, ".pi", "agent", "settings.json"), {
+      packages: [
+        {
+          source: "./packages/fixture-package",
+          skills: ["!skills/private/*"],
+        },
+      ],
+    });
+
+    const discovery = discoverSkillsForScope("global", {
+      cwd: fixture.repoDir,
+      homeDir: fixture.homeDir,
+    });
+
+    expect(discovery.skills.find((entry) => entry.name === "public-skill")?.enabled).toBe(true);
+    expect(discovery.skills.find((entry) => entry.name === "private/hidden-skill")?.enabled).toBe(false);
+  });
+
+  it("adds a minimal package disable override while preserving a broad glob", () => {
+    const fixture = createFixtureRoot();
+    const packageDir = path.join(fixture.homeDir, ".pi", "agent", "packages", "fixture-package");
+    const settingsPath = path.join(fixture.homeDir, ".pi", "agent", "settings.json");
+
+    writePackage(packageDir, ["packaged-skill", "other-skill"]);
+    writeJson(settingsPath, {
+      packages: [
+        {
+          source: "./packages/fixture-package",
+          prompts: ["prompts/review.md"],
+          skills: ["skills/*"],
+        },
+      ],
+    });
+
+    const discovery = discoverSkillsForScope("global", {
+      cwd: fixture.repoDir,
+      homeDir: fixture.homeDir,
+    });
+    const skill = discovery.skills.find((entry) => entry.name === "packaged-skill");
+
+    saveSkillChanges("global", discovery.global, discovery.skills, [{ skillId: skill!.id, enabled: false }]);
+
+    expect(JSON.parse(fs.readFileSync(settingsPath, "utf8"))).toEqual({
+      packages: [
+        {
+          source: "./packages/fixture-package",
+          prompts: ["prompts/review.md"],
+          skills: ["skills/*", "-skills/packaged-skill"],
+        },
+      ],
+    });
+  });
+
+  it("preserves pinned git package source refs when updating skill filters", () => {
+    const fixture = createFixtureRoot();
+    const packageDir = path.join(fixture.repoDir, ".pi", "git", "github.com", "team", "fixture-repo");
+    const settingsPath = path.join(fixture.repoDir, ".pi", "settings.json");
+
+    writePackage(packageDir, ["git-skill"], "fixture-repo");
+    writeJson(settingsPath, {
+      packages: [
+        {
+          source: "git:github.com/team/fixture-repo@v1.2.3",
+          skills: ["skills/*"],
+        },
+      ],
+    });
+
+    const discovery = discoverSkillsForScope("project", {
+      cwd: fixture.repoDir,
+      homeDir: fixture.homeDir,
+    });
+    const skill = discovery.skills.find((entry) => entry.name === "git-skill");
+
+    saveSkillChanges("project", discovery.project, discovery.skills, [{ skillId: skill!.id, enabled: false }]);
+
+    expect(JSON.parse(fs.readFileSync(settingsPath, "utf8"))).toEqual({
+      packages: [
+        {
+          source: "git:github.com/team/fixture-repo@v1.2.3",
+          skills: ["skills/*", "-skills/git-skill"],
+        },
+      ],
+    });
+  });
+
   it("rejects malformed settings json", () => {
     const fixture = createFixtureRoot();
     const settingsPath = path.join(fixture.homeDir, ".pi", "agent", "settings.json");

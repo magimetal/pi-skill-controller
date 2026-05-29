@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { getPackageIdentity, resolvePackageRoot } from "./package-source.js";
 import { expandHomePathSelector, resolveSettingsPath } from "./path-utils.js";
-import { evaluateExactPathEntries, evaluateOverridePathEntries, normalizeExactPath } from "./serialization.js";
+import { evaluateExactPathEntries, evaluateOverridePathEntries, matchesPathSelector, normalizeExactPath } from "./serialization.js";
 import { loadScopeSettings } from "./settings-store.js";
 import type {
   DiscoveryResult,
@@ -36,6 +36,22 @@ function normalizeName(name: string): string {
 
 function isOverrideSkillEntry(entry: string): boolean {
   return entry.startsWith("+") || entry.startsWith("-") || entry.startsWith("!");
+}
+
+function hasGlobSyntax(entry: string): boolean {
+  return /[*?[\]]/.test(entry);
+}
+
+function stripSelectorPrefix(entry: string): string {
+  return isOverrideSkillEntry(entry) ? entry.slice(1) : entry;
+}
+
+function globSearchBase(entry: string): string {
+  const normalized = normalizeName(stripSelectorPrefix(entry));
+  const globIndex = normalized.search(/[*?[\]]/);
+  if (globIndex < 0) return normalized;
+  const slashIndex = normalized.slice(0, globIndex).lastIndexOf("/");
+  return slashIndex < 0 ? "." : normalized.slice(0, slashIndex);
 }
 
 function expandOverrideSkillEntries(scopeSettings: ScopeSettings): string[] | undefined {
@@ -90,9 +106,13 @@ function packageSkillRoots(packageRoot: string, fsApi: FileSystemApi): string[] 
     const raw = fsApi.readFileSync(packageJsonPath, "utf8");
     const parsed = JSON.parse(raw) as { pi?: { skills?: string[] } };
     if (parsed.pi?.skills?.length) {
-      return parsed.pi.skills
-        .filter((entry) => !entry.includes("*") && !entry.startsWith("!"))
-        .map((entry) => path.resolve(packageRoot, entry));
+      if (parsed.pi.skills.some((entry) => hasGlobSyntax(entry) || isOverrideSkillEntry(entry))) {
+        return collectSkillDirs(packageRoot, fsApi).filter((skillDirPath) => {
+          const relativeToPackage = normalizeName(path.relative(packageRoot, skillDirPath));
+          return evaluateExactPathEntries(parsed.pi?.skills, relativeToPackage, false);
+        });
+      }
+      return parsed.pi.skills.map((entry) => path.resolve(packageRoot, entry));
     }
   }
   return [path.join(packageRoot, "skills")];
@@ -117,13 +137,17 @@ function discoverFromTopLevelSkills(
 ): void {
   const expandedSkillEntries = scopeSettings.data.skills?.map((entry) => expandHomePathSelector(entry, scopeSettings.homeDir));
   for (const entry of scopeSettings.data.skills ?? []) {
-    if (entry.startsWith("+") || entry.startsWith("-") || entry.startsWith("!") || entry.includes("*")) {
+    if (entry.startsWith("+") || entry.startsWith("-") || entry.startsWith("!")) {
       continue;
     }
-    const resolved = resolveSettingsPath(scopeSettings.baseDir, entry, scopeSettings.homeDir);
+    const searchEntry = hasGlobSyntax(entry) ? globSearchBase(entry) : entry;
+    const resolved = resolveSettingsPath(scopeSettings.baseDir, searchEntry, scopeSettings.homeDir);
     for (const skillPath of collectSkillDirs(resolved, fsApi)) {
       const skillDirPath = skillPath.endsWith(".md") ? skillPath : skillPath;
       const relativeSkillPath = normalizeExactPath(scopeSettings.baseDir, skillDirPath);
+      if (hasGlobSyntax(entry) && !matchesPathSelector(expandHomePathSelector(entry, scopeSettings.homeDir), relativeSkillPath)) {
+        continue;
+      }
       pushSkill(skills, {
         id: `settings:${scopeSettings.scope}:${skillDirPath}`,
         name: resolveSkillName(skillDirPath, fsApi),

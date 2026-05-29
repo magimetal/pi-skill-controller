@@ -126,6 +126,74 @@ describe("skill discovery", () => {
     expect(new Set(collisions.map((skill) => skill.sourceLabel)).size).toBe(2);
   });
 
+  it("discovers package skills declared with glob include and exclude patterns", () => {
+    const fixture = createFixtureRoot();
+    const packageDir = path.join(fixture.homeDir, ".pi", "agent", "packages", "fixture-package");
+
+    writePackage(packageDir, ["public-skill", "other-skill", "private/hidden-skill"]);
+    writeJson(path.join(packageDir, "package.json"), {
+      name: "fixture-package",
+      version: "0.0.0",
+      type: "module",
+      pi: {
+        skills: ["skills/*", "!skills/private/*"],
+      },
+    });
+    writeJson(path.join(fixture.homeDir, ".pi", "agent", "settings.json"), {
+      packages: ["./packages/fixture-package"],
+    });
+
+    const result = discoverSkillsForScope("global", {
+      cwd: fixture.repoDir,
+      homeDir: fixture.homeDir,
+    });
+
+    expect(result.skills.map((skill) => skill.name).sort()).toEqual(["other-skill", "public-skill"]);
+  });
+
+  it("discovers package skills declared with plain exclude selectors", () => {
+    const fixture = createFixtureRoot();
+    const packageDir = path.join(fixture.homeDir, ".pi", "agent", "packages", "fixture-package");
+
+    writePackage(packageDir, ["public-skill", "private/hidden-skill"]);
+    writeJson(path.join(packageDir, "package.json"), {
+      name: "fixture-package",
+      version: "0.0.0",
+      type: "module",
+      pi: {
+        skills: ["skills", "-skills/private"],
+      },
+    });
+    writeJson(path.join(fixture.homeDir, ".pi", "agent", "settings.json"), {
+      packages: ["./packages/fixture-package"],
+    });
+
+    const result = discoverSkillsForScope("global", {
+      cwd: fixture.repoDir,
+      homeDir: fixture.homeDir,
+    });
+
+    expect(result.skills.map((skill) => skill.name)).toEqual(["public-skill"]);
+  });
+
+  it("discovers top-level settings skills declared with glob include patterns", () => {
+    const fixture = createFixtureRoot();
+    const skillsRoot = path.join(fixture.homeDir, "Dev", "magi-skills", "skills");
+
+    writeSkill(path.join(skillsRoot, "alpha"), "alpha");
+    writeSkill(path.join(skillsRoot, "beta"), "beta");
+    writeJson(path.join(fixture.homeDir, ".pi", "agent", "settings.json"), {
+      skills: ["~/Dev/magi-skills/skills/*"],
+    });
+
+    const result = discoverSkillsForScope("global", {
+      cwd: fixture.repoDir,
+      homeDir: fixture.homeDir,
+    });
+
+    expect(result.skills.map((skill) => skill.name).sort()).toEqual(["alpha", "beta"]);
+  });
+
   it("discovers project-installed npm and git package skills", () => {
     const fixture = createFixtureRoot();
     const npmPackageDir = path.join(fixture.repoDir, ".pi", "npm", "node_modules", "@scope", "fixture-package");

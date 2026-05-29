@@ -18,14 +18,67 @@ function isPrefixed(entry: string): boolean {
 }
 
 function normalizeSlashes(value: string): string {
-  return value.split(path.sep).join("/");
+  return value.split(path.sep).join("/").replace(/^\.\//, "");
 }
 
-function matchesLiteralSelector(selector: string, relativePath: string): boolean {
+function hasGlobSyntax(selector: string): boolean {
+  return /[*?[\]]/.test(selector);
+}
+
+function escapeRegex(value: string): string {
+  return value.replace(/[.+^${}()|[\]\\]/g, "\\$&");
+}
+
+function globToRegex(selector: string): RegExp {
+  let source = "^";
+  for (let index = 0; index < selector.length; index += 1) {
+    const character = selector[index]!;
+    const next = selector[index + 1];
+    if (character === "*" && next === "*") {
+      source += ".*";
+      index += 1;
+      continue;
+    }
+    if (character === "*") {
+      source += "[^/]*";
+      continue;
+    }
+    if (character === "?") {
+      source += "[^/]";
+      continue;
+    }
+    source += escapeRegex(character);
+  }
+  source += "$";
+  return new RegExp(source);
+}
+
+export function matchesPathSelector(selector: string, relativePath: string): boolean {
   const normalizedSelector = normalizeSlashes(selector);
   const normalizedPath = normalizeSlashes(relativePath);
+  if (hasGlobSyntax(normalizedSelector)) {
+    return globToRegex(normalizedSelector).test(normalizedPath);
+  }
   return (
     normalizedPath === normalizedSelector || normalizedPath.startsWith(`${normalizedSelector}/`)
+  );
+}
+
+function stripSelectorPrefix(entry: string): string {
+  return isPrefixed(entry) ? entry.slice(1) : entry;
+}
+
+function isNegativeSelector(entry: string): boolean {
+  return entry.startsWith("-") || entry.startsWith("!");
+}
+
+function isPositiveSelector(entry: string): boolean {
+  return !isNegativeSelector(entry);
+}
+
+function hasMatchingNegativeSelector(entries: string[], relativePath: string): boolean {
+  return entries.some(
+    (entry) => isNegativeSelector(entry) && matchesPathSelector(entry.slice(1), relativePath),
   );
 }
 
@@ -49,19 +102,19 @@ export function evaluateExactPathEntries(
 
   for (const entry of entries) {
     if (entry.startsWith("-")) {
-      if (matchesLiteralSelector(entry.slice(1), relativePath)) {
+      if (matchesPathSelector(entry.slice(1), relativePath)) {
         included = false;
       }
       continue;
     }
     if (entry.startsWith("!")) {
-      if (matchesLiteralSelector(entry.slice(1), relativePath)) {
+      if (matchesPathSelector(entry.slice(1), relativePath)) {
         included = false;
       }
       continue;
     }
     const literal = entry.startsWith("+") ? entry.slice(1) : entry;
-    if (matchesLiteralSelector(literal, relativePath)) {
+    if (matchesPathSelector(literal, relativePath)) {
       included = true;
     }
   }
@@ -78,12 +131,12 @@ export function evaluateOverridePathEntries(
 
   for (const entry of entries ?? []) {
     if (entry.startsWith("-") || entry.startsWith("!")) {
-      if (matchesLiteralSelector(entry.slice(1), relativePath)) {
+      if (matchesPathSelector(entry.slice(1), relativePath)) {
         included = false;
       }
       continue;
     }
-    if (entry.startsWith("+") && matchesLiteralSelector(entry.slice(1), relativePath)) {
+    if (entry.startsWith("+") && matchesPathSelector(entry.slice(1), relativePath)) {
       included = true;
     }
   }
@@ -103,11 +156,11 @@ export function ensureTopLevelSkillState(
     (entry) => entry !== negativeEntry && entry !== positiveEntry,
   );
 
-  const hasPositiveSelectors = filtered.some((entry) => !entry.startsWith("-") && !entry.startsWith("!"));
-
   if (!enabled) {
-    filtered.push(negativeEntry);
-  } else if (hasPositiveSelectors && !filtered.some((entry) => matchesLiteralSelector(isPrefixed(entry) ? entry.slice(1) : entry, relativeSkillDirPath))) {
+    if (!hasMatchingNegativeSelector(filtered, relativeSkillDirPath)) {
+      filtered.push(negativeEntry);
+    }
+  } else if (!evaluateExactPathEntries(filtered, relativeSkillDirPath, true)) {
     filtered.push(positiveEntry);
   }
 
@@ -153,15 +206,22 @@ export function updatePackageSkillState(
   const negativeEntry = `-${relativeSkillDirPath}`;
   const positiveEntry = `+${relativeSkillDirPath}`;
   const filtered = skills.filter((entry) => entry !== negativeEntry && entry !== positiveEntry);
-  const hasPositiveSelectors = filtered.some((entry) => !entry.startsWith("-") && !entry.startsWith("!"));
 
   if (!enabled) {
-    filtered.push(negativeEntry);
-  } else if (hasPositiveSelectors && !filtered.some((entry) => matchesLiteralSelector(isPrefixed(entry) ? entry.slice(1) : entry, relativeSkillDirPath))) {
+    if (!hasMatchingNegativeSelector(filtered, relativeSkillDirPath)) {
+      filtered.push(negativeEntry);
+    }
+  } else if (!evaluateExactPathEntries(filtered, relativeSkillDirPath, true)) {
     filtered.push(positiveEntry);
   }
 
-  if (enabled && forcePositiveWhenEnabled && !filtered.some((entry) => matchesLiteralSelector(isPrefixed(entry) ? entry.slice(1) : entry, relativeSkillDirPath))) {
+  if (
+    enabled
+    && forcePositiveWhenEnabled
+    && !filtered.some(
+      (entry) => isPositiveSelector(entry) && matchesPathSelector(stripSelectorPrefix(entry), relativeSkillDirPath),
+    )
+  ) {
     filtered.push(positiveEntry);
   }
 
