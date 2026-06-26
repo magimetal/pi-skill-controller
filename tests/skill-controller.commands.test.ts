@@ -145,6 +145,7 @@ describe("command handler copy", () => {
     const notify = vi.fn();
     await handler("", {
       cwd: "/tmp/repo",
+      isProjectTrusted: () => true,
       ui: {
         custom: vi.fn(async () => ({ type: "cancel", changes: [] })),
         notify,
@@ -154,6 +155,26 @@ describe("command handler copy", () => {
     expect(notify).toHaveBeenCalledWith(
       "Cancelled project skill changes. No files written to /tmp/repo/.pi/settings.json.",
       "info",
+    );
+  });
+
+  it("reports untrusted project without opening overlay", async () => {
+    const registerCommand = vi.fn();
+    registerScopedSkillControlCommand({ registerCommand } as never, "project");
+    const handler = registerCommand.mock.calls[0]?.[1]?.handler as (args: string, ctx: any) => Promise<void>;
+
+    const custom = vi.fn();
+    const notify = vi.fn();
+    await handler("", {
+      cwd: "/tmp/repo",
+      isProjectTrusted: () => false,
+      ui: { custom, notify },
+    });
+
+    expect(custom).not.toHaveBeenCalled();
+    expect(notify).toHaveBeenCalledWith(
+      "Project trust required for project skill control. No files written to /tmp/repo/.pi/settings.json. Run /trust, restart pi, then retry /sc:project.",
+      "error",
     );
   });
 

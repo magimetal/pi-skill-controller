@@ -32,6 +32,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- Updated Pi development dependency pins and lockfile validation target from `0.77.0` to `0.80.2`; `/sc:project` now requires project trust (Pi `0.79.0+`) and reports the target settings path with a `/trust` reminder when untrusted instead of silently no-op'ing.
 - Updated Pi development dependency pins and lockfile validation target from `0.74.0` to `0.77.0`.
 - Migrated Pi package imports and package metadata from `@mariozechner/*` packages to `@earendil-works/*` packages at version `0.74.0`.
 - Bumped `@mariozechner/pi-coding-agent` and `@mariozechner/pi-tui` dev dependencies to `0.69.0` so package validates against Pi's TypeBox 1.x migration and current extension APIs.

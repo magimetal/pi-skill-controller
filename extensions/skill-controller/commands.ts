@@ -38,6 +38,14 @@ export function registerScopedSkillControlCommand(
       const homeDir = deps.homeDir ?? process.env.HOME ?? "";
       const targetSettingsPath = getDefaultSettingsPath(scope, ctx.cwd, homeDir);
 
+      if (scope === "project" && !ctx.isProjectTrusted()) {
+        ctx.ui.notify(
+          `Project trust required for project skill control. No files written to ${targetSettingsPath}. Run /trust, restart pi, then retry /sc:project.`,
+          "error",
+        );
+        return;
+      }
+
       try {
         const skills = discoverSkillsForScope(scope, { ...deps, cwd: ctx.cwd }).skills;
         const selection = await openSkillControllerOverlay(ctx, scope, skills, args, targetSettingsPath);

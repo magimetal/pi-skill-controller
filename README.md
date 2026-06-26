@@ -113,7 +113,7 @@ If disabling auto-discovered local skill under `~/.pi/agent/skills/gizmo`, resul
 
 ### `/sc:project`
 
-Writes `.pi/settings.json` for current project.
+Writes `.pi/settings.json` for current project. Pi 0.80+ requires project trust before `/sc:project` can inspect or write project-scope resources; if untrusted, command reports target path and exits without opening overlay.
 
 Typical use:
 
@@ -122,11 +122,12 @@ Typical use:
 
 Worked example:
 
-1. run `/sc:project`
-2. select skill for current repo
-3. press `Enter`
-4. press `Ctrl+S`
-5. if `.pi/settings.json` does not exist yet, package creates it at save time
+1. trust project in Pi if prompted, or run `/trust` and restart Pi
+2. run `/sc:project`
+3. select skill for current repo
+4. press `Enter`
+5. press `Ctrl+S`
+6. if `.pi/settings.json` does not exist yet, package creates it at save time
 
 For first project save, file can start as small valid JSON like:
 
